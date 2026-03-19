@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: AiService
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start_and_stop
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama3
+  ssl:
+    bundle:
+      jks:
+        internal-service-bundle:
+          truststore:
+            location: classpath:internal_services.jks
+            password: changeit
+server:
+  port: 8083
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+services:
+  budgeting:
+    url: https://localhost:8082
+  reporting:
+    url: https://localhost:8081
