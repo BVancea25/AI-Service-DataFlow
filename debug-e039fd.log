@@ -1,0 +1,12 @@
+{"sessionId":"e039fd","runId":"c3bb28ef-e2cf-47da-9fa7-3ba66ae62b68","hypothesisId":"H1","location":"FinancialAdvisorService:61","message":"chat_request_start","data":{"jwtPresent":true,"messageLength":95},"timestamp":1774549368094}
+{"sessionId":"e039fd","runId":"runtime","hypothesisId":"H5","location":"ReportingAdvisorTools:71","message":"kpis_result_present","data":{"resultPresent":true},"timestamp":1774549369906}
+{"sessionId":"e039fd","runId":"runtime","hypothesisId":"H3","location":"ReportingAdvisorTools:50","message":"overview_result_size","data":{"resultCount":2},"timestamp":1774549369927}
+{"sessionId":"e039fd","runId":"c3bb28ef-e2cf-47da-9fa7-3ba66ae62b68","hypothesisId":"H4","location":"FinancialAdvisorService:74","message":"chat_request_success","data":{"responseLength":39},"timestamp":1774549370294}
+{"sessionId":"e039fd","runId":"91a2d3ae-2228-49f6-acd2-c20d1f6270a3","hypothesisId":"H1","location":"FinancialAdvisorService:61","message":"chat_request_start","data":{"messageLength":42,"jwtPresent":true},"timestamp":1774549826973}
+{"sessionId":"e039fd","runId":"runtime","hypothesisId":"H5","location":"ReportingAdvisorTools:71","message":"kpis_result_present","data":{"resultPresent":true},"timestamp":1774549828559}
+{"sessionId":"e039fd","runId":"runtime","hypothesisId":"H3","location":"ReportingAdvisorTools:50","message":"overview_result_size","data":{"resultCount":29},"timestamp":1774549829650}
+{"sessionId":"e039fd","runId":"91a2d3ae-2228-49f6-acd2-c20d1f6270a3","hypothesisId":"H4","location":"FinancialAdvisorService:74","message":"chat_request_success","data":{"responseLength":47},"timestamp":1774549830171}
+{"sessionId":"e039fd","runId":"171675b7-c673-4b9f-b780-fc20aafb10da","hypothesisId":"H1","location":"FinancialAdvisorService:61","message":"chat_request_start","data":{"messageLength":48,"jwtPresent":true},"timestamp":1774549866940}
+{"sessionId":"e039fd","runId":"runtime","hypothesisId":"H5","location":"ReportingAdvisorTools:71","message":"kpis_result_present","data":{"resultPresent":true},"timestamp":1774549867387}
+{"sessionId":"e039fd","runId":"runtime","hypothesisId":"H3","location":"ReportingAdvisorTools:50","message":"overview_result_size","data":{"resultCount":29},"timestamp":1774549867401}
+{"sessionId":"e039fd","runId":"171675b7-c673-4b9f-b780-fc20aafb10da","hypothesisId":"H4","location":"FinancialAdvisorService:74","message":"chat_request_success","data":{"responseLength":53},"timestamp":1774549867782}

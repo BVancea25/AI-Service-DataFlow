@@ -3,14 +3,16 @@ spring:
     name: AiService
   docker:
     compose:
-      enabled: true
+      enabled: false
       lifecycle-management: start_and_stop
   ai:
-    ollama:
-      base-url: http://localhost:11434
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai
       chat:
         options:
-          model: llama3
+          model: llama-3.3-70b-versatile
+          temperature: 0.2
   ssl:
     bundle:
       jks:
@@ -18,6 +20,12 @@ spring:
           truststore:
             location: classpath:internal_services.jks
             password: changeit
+  security:
+    oauth2:
+      resource server:
+        jwt:
+          jwk-set-uri: https://localhost:8442/realms/data-flow/protocol/openid-connect/certs
+          issuer-uri: https://localhost:8442/realms/data-flow
 server:
   port: 8083
   ssl:
@@ -25,6 +33,9 @@ server:
     key-store: classpath:keystore.p12
     key-store-password: changeit
     key-store-type: PKCS12
+logging:
+  level:
+   org.springframework.ai.chat.client.advisor: DEBUG
 services:
   budgeting:
     url: https://localhost:8082

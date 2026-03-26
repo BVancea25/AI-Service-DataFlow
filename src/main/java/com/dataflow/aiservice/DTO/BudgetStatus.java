@@ -1,6 +1,7 @@
 package com.dataflow.aiservice.DTO;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record BudgetStatus(
         String budgetId,
@@ -10,5 +11,7 @@ public record BudgetStatus(
         BigDecimal remainingAmount,
         double progressPercentage,
         String status,
-        String period
+        String period,
+        String currencyCode,
+        LocalDate startDate
 ) {}
