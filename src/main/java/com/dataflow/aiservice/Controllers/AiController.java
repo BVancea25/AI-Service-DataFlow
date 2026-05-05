@@ -21,6 +21,7 @@ public class AiController {
     public Flux<String> streamChat(@RequestBody Map<String, String> payload) {
 
         String userMessage = payload.get("message");
-        return financialAdvisorService.processQuery(userMessage);
+        String conversationId = payload.get("conversationId");
+        return financialAdvisorService.processQuery(userMessage, conversationId);
     }
 }

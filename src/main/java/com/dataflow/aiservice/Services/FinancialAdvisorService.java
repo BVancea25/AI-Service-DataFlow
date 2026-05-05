@@ -3,6 +3,10 @@ package com.dataflow.aiservice.Services;
 import com.dataflow.aiservice.Config.AiFunction.BudgetingAdvisorTools;
 import com.dataflow.aiservice.Config.AiFunction.ReportingAdvisorTools;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -21,7 +25,12 @@ public class FinancialAdvisorService {
     private final BudgetingAdvisorTools budgetingAdvisorTools;
     private final ReportingAdvisorTools reportingAdvisorTools;
 
-    public FinancialAdvisorService(ChatClient.Builder builder, BudgetingAdvisorTools budgetingAdvisorTools, ReportingAdvisorTools reportingAdvisorTools){
+    public FinancialAdvisorService(
+            ChatClient.Builder builder,
+            ChatMemory chatMemory,
+            BudgetingAdvisorTools budgetingAdvisorTools,
+            ReportingAdvisorTools reportingAdvisorTools
+    ){
         this.chatClient = builder
                 .defaultSystem("""
                          You are 'DataFlow AI', a financial advisor assistant.
@@ -36,9 +45,11 @@ public class FinancialAdvisorService {
                         \s
                          RULES:
                          - Do not use strings like "1 year ago" for timeMeasure and date filter values
+                         - By default, use only 1 to 2 tools for one user query, if you think running more tools would be useful for the analysis ask the user if you should do so
                          - Valid timeMeasure values: DAY, MONTH, YEAR (this is used to group by days, months and years for the overview tool)
                          - Valid date format is ISO
-                         - If the function doesn't return data, just tell that nicely to the user, don't try to re-call the same tool with the same filters more then twice for an user query.
+                         - Once a tool returns a result, you MUST respond to the user immediately with that data. Never call the same tool twice in a single turn.
+                         - After receiving any tool result, your next output MUST be a final text response to the user, not another tool call.
                          - Call budgetStatusFunction for specific budgeting questions.
                          - Call reporting tools for report, KPI, dashboard, trend, comparison, breakdown and analysis requests.
                          - The DashboardFilter sent to reporting tools must include only fields relevant to the user request.
@@ -51,20 +62,26 @@ public class FinancialAdvisorService {
                          - NEVER output phrases like "No function call is needed", "I will now call...", "Let me check...", or any other internal monologue.
                          - The answers should be concise for the most part, unless the user query requires analysis.
                         """)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
         this.budgetingAdvisorTools = budgetingAdvisorTools;
         this.reportingAdvisorTools = reportingAdvisorTools;
     }
 
-    public Flux<String> processQuery(String message){
+    public Flux<String> processQuery(String message, String conversationId){
         var auth = SecurityContextHolder.getContext().getAuthentication();
         String tokenValue = "";
+        String userId = auth == null ? "anonymous" : auth.getName();
 
         if (auth instanceof JwtAuthenticationToken jwtAuth) {
             tokenValue = jwtAuth.getToken().getTokenValue();
+            if (jwtAuth.getToken().getSubject() != null && !jwtAuth.getToken().getSubject().isBlank()) {
+                userId = jwtAuth.getToken().getSubject();
+            }
         }
 
         String finalTokenValue = tokenValue;
+        String conversationKey = userId + ":" + normalizeConversationId(conversationId);
         String runId = UUID.randomUUID().toString();
         return Flux.create(sink -> {
             try {
@@ -77,6 +94,7 @@ public class FinancialAdvisorService {
                 String response = chatClient.prompt()
                         .tools(budgetingAdvisorTools, reportingAdvisorTools)
                         .toolContext(Map.of("jwtToken", finalTokenValue))
+                        .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, conversationKey))
                         .user(message)
                         .call()       // blocking — tool calls are properly intercepted
                         .content();
@@ -100,6 +118,19 @@ public class FinancialAdvisorService {
                 sink.error(e);
             }
         });
+    }
+
+    private String normalizeConversationId(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return "default";
+        }
+
+        String normalized = conversationId.replaceAll("[^a-zA-Z0-9_-]", "");
+        if (normalized.isBlank()) {
+            return "default";
+        }
+
+        return normalized.substring(0, Math.min(normalized.length(), 80));
     }
 
     private void debugLog(String runId, String hypothesisId, String location, String message, Map<String, Object> data) {
