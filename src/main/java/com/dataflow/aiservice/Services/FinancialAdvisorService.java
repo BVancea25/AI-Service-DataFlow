@@ -115,7 +115,8 @@ public class FinancialAdvisorService {
                         "messageSnippet", err.length() > 300 ? err.substring(0, 300) : err
                 ));
                 // #endregion
-                sink.error(e);
+                sink.next("I'm having trouble connecting to your data right now.");
+                sink.complete();
             }
         });
     }

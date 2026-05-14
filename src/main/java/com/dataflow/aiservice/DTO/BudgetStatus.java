@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 public record BudgetStatus(
         String budgetId,
+        String categoryId,
         String categoryName,
         BigDecimal limitAmount,
         BigDecimal spentAmount,
