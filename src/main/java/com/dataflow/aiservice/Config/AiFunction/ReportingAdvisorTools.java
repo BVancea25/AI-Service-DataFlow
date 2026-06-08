@@ -1,15 +1,11 @@
 package com.dataflow.aiservice.Config.AiFunction;
 
-import com.dataflow.aiservice.DTO.CategoryBreakdownDTO;
-import com.dataflow.aiservice.DTO.CategoryComparisonDTO;
-import com.dataflow.aiservice.DTO.DashboardFilter;
-import com.dataflow.aiservice.DTO.DashboardKpiDTO;
-import com.dataflow.aiservice.DTO.OverviewPointDTO;
-import com.dataflow.aiservice.DTO.PaymentMethodBreakdownDTO;
+import com.dataflow.aiservice.DTO.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -21,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +35,70 @@ public class ReportingAdvisorTools {
         this.restTemplate = restTemplate;
     }
 
-    @Tool(description = "Get dashboard overview points for a date/filter range. Use for trend summaries of income and expenses.")
+    @Tool(description = "Get an AI-ready financial summary for a predefined period. Use AiToolRequest with period enum values like CURRENT_MONTH, LAST_MONTH, LAST_3_MONTHS, LAST_6_MONTHS, YEAR_TO_DATE, CURRENT_YEAR, LAST_YEAR. The backend resolves exact dates and defaults.")
+    public AiFinancialSummaryResponse financialSummaryTool(
+            @ToolParam(description = "Intent-based reporting request. period is required. currencyCode, categoryName, and paymentMethod are optional and should be omitted unless explicitly requested by the user.")
+            AiToolRequest request,
+            ToolContext toolContext
+    ) {
+        HttpEntity<AiToolRequest> entity = buildAiToolRequestEntity(request, toolContext);
+        String url = reportingUrl + "/api/dashboard/ai/tools/financial-summary";
+        return restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                AiFinancialSummaryResponse.class
+        ).getBody();
+    }
+
+    @Tool(description = "Get AI-ready expense analysis for a predefined period. Use for questions about spending, expenses, top spending categories, or expense payment methods. The backend resolves exact dates, currency default, category name, and expense type.")
+    public AiAnalysisResponse expenseAnalysisTool(
+            @ToolParam(description = "Intent-based expense analysis request. period is required. currencyCode, categoryName, and paymentMethod are optional and should be omitted unless explicitly requested by the user.")
+            AiToolRequest request,
+            ToolContext toolContext
+    ) {
+        HttpEntity<AiToolRequest> entity = buildAiToolRequestEntity(request, toolContext);
+        String url = reportingUrl + "/api/dashboard/ai/tools/expense-analysis";
+        return restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                AiAnalysisResponse.class
+        ).getBody();
+    }
+
+    @Tool(description = "Get AI-ready income analysis for a predefined period. Use for questions about income, earnings, income categories, or income payment methods. The backend resolves exact dates, currency default, category name, and income type.")
+    public AiAnalysisResponse incomeAnalysisTool(
+            @ToolParam(description = "Intent-based income analysis request. period is required. currencyCode, categoryName, and paymentMethod are optional and should be omitted unless explicitly requested by the user.")
+            AiToolRequest request,
+            ToolContext toolContext
+    ) {
+        HttpEntity<AiToolRequest> entity = buildAiToolRequestEntity(request, toolContext);
+        String url = reportingUrl + "/api/dashboard/ai/tools/income-analysis";
+        return restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                AiAnalysisResponse.class
+        ).getBody();
+    }
+
+    @Tool(description = "Get AI-ready top category comparison for income and expenses over a predefined period. The backend resolves exact dates, currency default, and optional payment method or category name.")
+    public AiCategoryComparisonResponse categoryComparisonTool(
+            @ToolParam(description = "Intent-based category comparison request. period is required. currencyCode, categoryName, and paymentMethod are optional and should be omitted unless explicitly requested by the user.")
+            AiToolRequest request,
+            ToolContext toolContext
+    ) {
+        HttpEntity<AiToolRequest> entity = buildAiToolRequestEntity(request, toolContext);
+        String url = reportingUrl + "/api/dashboard/ai/tools/category-comparison";
+        return restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                AiCategoryComparisonResponse.class
+        ).getBody();
+    }
+
     public List<OverviewPointDTO> overviewFunction(DashboardFilter filter, ToolContext toolContext) {
         String jwtToken = (String) toolContext.getContext().get("jwtToken");
         log.info("overviewFunction called. jwtPresent={} filter={}", jwtToken != null && !jwtToken.isEmpty(), filter);
@@ -59,7 +119,6 @@ public class ReportingAdvisorTools {
         return result;
     }
 
-    @Tool(description = "Get dashboard KPI totals like income, expenses, net, and savings rate for a selected period.")
     public DashboardKpiDTO kpisFunction(DashboardFilter filter, ToolContext toolContext) {
         String jwtToken = (String) toolContext.getContext().get("jwtToken");
         log.info("kpisFunction called. jwtPresent={} filter={}", jwtToken != null && !jwtToken.isEmpty(), filter);
@@ -80,7 +139,6 @@ public class ReportingAdvisorTools {
         return result;
     }
 
-    @Tool(description = "Get category spending or income breakdown for the selected dashboard filters.")
     public List<CategoryBreakdownDTO> categoryBreakdownFunction(DashboardFilter filter, ToolContext toolContext) {
         String jwtToken = (String) toolContext.getContext().get("jwtToken");
         log.info("categoryBreakdownFunction called. jwtPresent={} filter={}", jwtToken != null && !jwtToken.isEmpty(), filter);
@@ -96,7 +154,6 @@ public class ReportingAdvisorTools {
         return result;
     }
 
-    @Tool(description = "Compare category totals grouped by transaction type for the selected period and filters.")
     public List<CategoryComparisonDTO> categoryComparisonFunction(DashboardFilter filter, ToolContext toolContext) {
         String jwtToken = (String) toolContext.getContext().get("jwtToken");
         log.info("categoryComparisonFunction called. jwtPresent={} filter={}", jwtToken != null && !jwtToken.isEmpty(), filter);
@@ -112,7 +169,6 @@ public class ReportingAdvisorTools {
         return result;
     }
 
-    @Tool(description = "Get totals by payment method for the selected dashboard filters.")
     public List<PaymentMethodBreakdownDTO> paymentMethodBreakdownFunction(DashboardFilter filter, ToolContext toolContext) {
         String jwtToken = (String) toolContext.getContext().get("jwtToken");
         log.info("paymentMethodBreakdownFunction called. jwtPresent={} filter={}", jwtToken != null && !jwtToken.isEmpty(), filter);
@@ -133,6 +189,58 @@ public class ReportingAdvisorTools {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwtToken);
         return new HttpEntity<>(filter, headers);
+    }
+
+    private HttpEntity<AiToolRequest> buildAiToolRequestEntity(AiToolRequest request, ToolContext toolContext) {
+        String jwtToken = (String) toolContext.getContext().get("jwtToken");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+        AiToolRequest safeRequest = sanitizeAiToolRequest(request);
+        return new HttpEntity<>(safeRequest, headers);
+    }
+
+    AiToolRequest sanitizeAiToolRequest(AiToolRequest request) {
+        if (request == null) {
+            return new AiToolRequest(null, null, null, null);
+        }
+
+        return new AiToolRequest(
+                request.period(),
+                sanitizeOptionalText(request.currencyCode()),
+                sanitizeOptionalText(request.categoryName()),
+                sanitizePaymentMethod(request.paymentMethod())
+        );
+    }
+
+    private String sanitizeOptionalText(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        if (normalized.isBlank()) {
+            return null;
+        }
+
+        String lowered = normalized.toLowerCase(Locale.ROOT);
+        if (lowered.equals("all") || lowered.equals("none") || lowered.equals("default")) {
+            return null;
+        }
+
+        return normalized;
+    }
+
+    private String sanitizePaymentMethod(String value) {
+        String normalized = sanitizeOptionalText(value);
+        if (normalized == null) {
+            return null;
+        }
+
+        String upper = normalized.toUpperCase(Locale.ROOT);
+        return switch (upper) {
+            case "CARD", "CASH", "TRANSFER" -> upper;
+            default -> null;
+        };
     }
 
     private void debugLog(String hypothesisId, String location, String message, Map<String, Object> data) {
